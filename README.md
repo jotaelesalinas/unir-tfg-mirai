@@ -1,4 +1,4 @@
-# unit-tfg-mirai
+# unir-tfg-mirai
 
 ## Requisitos
 
