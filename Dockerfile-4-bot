@@ -1,0 +1,37 @@
+FROM --platform=linux/amd64 bitnami/minideb
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Ejecutar todo con bash
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
+
+RUN apt update && \
+    apt install -y sudo iptables telnet telnetd ufw xinetd busybox && \
+    apt install -y htop net-tools iputils-ping procps lsof && \
+    apt clean autoclean -y && \
+    apt autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN adduser admin && \
+    echo "admin:admin" | chpasswd && \
+    echo -e "admin\tALL=NOPASSWD: ALL" >> /etc/sudoers
+
+COPY archivos/bot-xinetd-telnet.conf /etc/xinetd.d/telnet
+RUN service xinetd restart
+
+# Abrir puerto 23 del firewall
+
+RUN sudo update-alternatives --set iptables /usr/sbin/iptables-legacy && \
+    sudo ufw allow 23/tcp
+
+RUN service xinetd restart
+
+COPY ./tmp/bin/loader /bin/loader
+
+# Otras cosas
+
+EXPOSE 23
+
+ENTRYPOINT service xinetd restart && sh

